@@ -7,43 +7,10 @@ require 'mechanize'
 require 'capybara'
 require 'watir'
 
-def create_directory(dirname)
-  unless Dir.exists?(dirname)
-    Dir.mkdir(dirname)
-  else
-    puts "Skipping creating directory " + dirname + ". It already exists."
-  end
-end
-
-def http_download_uri(uri, filename)
-  puts "Starting HTTP download for: " + uri.to_s
-  http_object = Net::HTTP.new(uri.host, uri.port)
-  http_object.use_ssl = true if uri.scheme == 'https'
-  begin
-    http_object.start do |http|
-      request = Net::HTTP::Get.new uri.request_uri
-      http.read_timeout = 500
-      http.request request do |response|
-        open filename, 'w' do |io|
-          response.read_body do |chunk|
-            io.write chunk
-          end
-        end
-      end
-    end
-  rescue Exception => e
-    puts "=> Exception: '#{e}'. Skipping download."
-    return
-  end
-  puts "Stored download as " + filename + "."
-end
-
-
-
 CSV.open("myfile.csv", "w", {:col_sep => ";"}) do |csv|
   Capybara.current_driver = :selenium
   session = Capybara::Session.new(:selenium)
-  ident = 1
+  
   1.upto(50).each do |page|
     puts page.to_s + " page"
     session.reset_session!
@@ -55,7 +22,7 @@ CSV.open("myfile.csv", "w", {:col_sep => ";"}) do |csv|
       puts Time.now.to_s
       puts i.to_s + " row"
       row = session.all(".search-result-table")[0].all('tr')[i]
-      comp, sh_categ, sh_man, link, name, category, manufact, short_descr, sklad, srok, quantity, price, description, image1, image2, image3, image4, image5, pdf1, pdf2, pdf3, pdf4, pdf5, image1f, image2f, image3f, image4f, image5f, pdf1f, pdf2f, pdf3f, pdf4f, pdf5f = "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" , "", "", "", "", "", "", "", "", "", ""
+      comp, sh_categ, sh_man, link, name, category, manufact, short_descr, sklad, srok, quantity, price, description, image1, image2, image3, image4, image5, pdf1, pdf2, pdf3, pdf4, pdf5 = "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" 
       begin 
         comp = row.all('.sres-comp')[0].all('a')[0].text
       rescue; end
@@ -69,6 +36,7 @@ CSV.open("myfile.csv", "w", {:col_sep => ";"}) do |csv|
         link = row.all('.sres-comp')[0].all('a')[0][:href]      
       rescue; end
       begin
+
           window = HTTParty.get(link)
           page = Nokogiri::HTML(window)
           begin
@@ -129,16 +97,7 @@ CSV.open("myfile.csv", "w", {:col_sep => ";"}) do |csv|
             pdf5 = page.css('.attach')[4].css('a')[0].attr('href').to_s
           rescue; end
           
-          
-          create_directory(ident.to_s)
-          Dir.chdir(ident.to_s)
-          puts "Changed directory: " + Dir.pwd
-          uri = URI.parse()
-                    
-           
- 
-          csv << [ident, comp, sh_categ, sh_man, link, name, category, manufact, short_descr, sklad, srok, quantity, price, description, image1, image2, image3, image4, image5, pdf1, pdf2, pdf3, pdf4, pdf5, image1f, image2f, image3f, image4f, image5f, pdf1f, pdf2f, pdf3f, pdf4f, pdf5f]
-          ident += 1
+          csv << [comp, sh_categ, sh_man, link, name, category, manufact, short_descr, sklad, srok, quantity, price, description, image1, image2, image3, image4, image5, pdf1, pdf2, pdf3, pdf4, pdf5, "finish"]
       rescue; end
     end
   end
